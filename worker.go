@@ -23,23 +23,7 @@ func (c *crawler) startWorkers(numWorkers int) <-chan *JobResult {
 	var wg sync.WaitGroup
 	for i := 0; i < numWorkers; i++ {
 		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for job := range c.jobs {
-				doc, err := httpFetchDocument(job.url)
-				retries := c.maxRetries
-				for err != nil && retries > 0 {
-					// keep retrying while we're getting errors and have retries
-					// TODO: exponential backoff
-					doc, err = httpFetchDocument(job.url)
-				}
-				if err != nil {
-					out <- &JobResult{Job: job, err: err}
-					continue
-				}
-				out <- &JobResult{Job: job, doc: doc}
-			}
-		}()
+		go c.startWorker(&wg, out)
 	}
 	go func() {
 		// close the output channel when all the workers are done
@@ -47,4 +31,22 @@ func (c *crawler) startWorkers(numWorkers int) <-chan *JobResult {
 		close(out)
 	}()
 	return out
+}
+
+func (c *crawler) startWorker(wg *sync.WaitGroup, out chan<- *JobResult) {
+	defer wg.Done()
+	for job := range c.jobs {
+		doc, err := httpFetchDocument(job.url)
+		retries := c.maxRetries
+		for err != nil && retries > 0 {
+			// keep retrying while we're getting errors and have retries
+			// TODO: exponential backoff
+			doc, err = httpFetchDocument(job.url)
+		}
+		if err != nil {
+			out <- &JobResult{Job: job, err: err}
+			continue
+		}
+		out <- &JobResult{Job: job, doc: doc}
+	}
 }
