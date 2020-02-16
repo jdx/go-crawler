@@ -48,3 +48,11 @@ https://google.com/intl/en/policies/terms/
 ## Testing
 
 Test with `go test ./...`
+
+## Code Layout
+
+* [`crawl.go`](crawl.go) – main entry point for crawling library
+* [`http.go`](http.go) – web request logic
+* [`links.go`](links.go) – helpers to filter/map URLs
+* [`worker.go`](worker.go) – concurrency logic
+* [`cmd/crawl/main.go`](cmd/crawl/main.go) – main entry point for CLI wrapper of crawling library
